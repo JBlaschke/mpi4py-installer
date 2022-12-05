@@ -26,7 +26,7 @@ def config(system: str, variant: str) -> dict[str, str]:
         if variant == "cpu:gnu":
             config["MPICC"] = "cc -shared"
         elif variant == "gpu:gnu":
-            config["MPICC"] ="cc -target-accel=nvidia80 -shared"
+            config["MPICC"] = "cc -target-accel=nvidia80 -shared"
         elif variant == "gpu:nvidia":
             config["MPICC"] = "cc -target-accel=nvidia80 -shared" 
             config["CC"] = "nvc"
