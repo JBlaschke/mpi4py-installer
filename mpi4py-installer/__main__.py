@@ -21,6 +21,14 @@ def run():
         "--variant", type=str,
         help="Install variant"
     )
+    parser.add_argument(
+        "--system", type=str,
+        help="Overwrite the installer's target system"
+    )
+    parser.add_argument(
+        "--show-variants", action="store_true",
+        help="Display variants for this site and system"
+    )
 
     args = parser.parse_args()
 
@@ -28,14 +36,31 @@ def run():
     logger.debug(f"Runtime arguments={args}")
 
     site = load_site(args.site)
-    system = site.determine_system()
-    logger.info(f"Determined system as: {system}")
+
+    if args.system is None:
+        system = site.determine_system()
+        logger.info(f"Determined system as: {system}")
+    else:
+        system = args.system
+        logger.info(f"Using: {system=}")
 
     if args.variant is None:
         variant = site.auto_variant(system)
         logger.info(f"Automatically setting {variant=}")
     else:
         variant = args.variant
+
+    if args.show_variants:
+        print(f"Available variants for {system=}")
+        auto_variant = site.auto_variant(system)
+
+        for v in site.available_variants(system):
+            if v == auto_variant:
+                print(f"  * {v}")
+            else:
+                print(f"    {v}")
+
+        exit(0)
 
     config = site.config(system, variant)
     logger.debug(f"Loaded {config=}")
@@ -54,9 +79,8 @@ def run():
         ]))
 
     pip_cmd_str = pip_cmd(config)
-    logger.info(f"{pip_cmd_str=}")
 
-    logger.info(f"Installing mpi4py using {pip_cmd_str=}")
+    logger.info(f"Installing mpi4py")
     pip_install_mpi4py(pip_cmd_str, site.init(system, variant))
 
 

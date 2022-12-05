@@ -5,6 +5,13 @@ def determine_system():
     return environ["NERSC_HOST"]
 
 
+def available_variants(system):
+    if system == "perlmutter":
+        return ["cpu:gnu", "gpu:gnu", "gpu:nvidia"]
+    else:
+        raise RuntimeError(f"Unknown {system=}")
+
+
 def auto_variant(system):
     if system == "perlmutter":
         return "gpu:gnu"

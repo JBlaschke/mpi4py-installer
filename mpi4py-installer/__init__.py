@@ -94,14 +94,14 @@ def pip_install_mpi4py(pip_cmd, init):
     logger.debug(f"Installing mpi4py")
 
     with BashRunner() as bash_runner:
-        logger.debug(f"Running init command: {init}")
+        logger.info(f"Running init command: {init}")
         out = bash_runner.run(init, capture_output=True)
 
         logger.debug(f"stderr={out.stderr.decode()}")
         out.check_returncode()
         logger.debug(f"stdout={out.stdout.decode()}")
 
-        logger.debug(f"Running install command: {cmd}")
+        logger.info(f"Running install command: {cmd}")
         out = bash_runner.run(cmd, capture_output=True)
 
         logger.debug(f"stderr={out.stderr.decode()}")
