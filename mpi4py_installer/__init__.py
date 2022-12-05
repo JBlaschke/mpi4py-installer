@@ -13,7 +13,7 @@ logging.basicConfig(format=FORMAT)
 def load_site(site):
     logger.debug(f"Loading site: {site}")
     site_module = importlib.import_module(
-        f".sites.{site}", package="mpi4py-installer"
+        f".sites.{site}", package="mpi4py_installer"
     )
     logger.debug("Done loading site")
     return site_module

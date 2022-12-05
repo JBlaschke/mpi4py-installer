@@ -51,3 +51,9 @@ def init(system: str, variant: str) -> str:
             raise RuntimeError(f"Unknown {variant=} on {system=}")
     else:
         raise RuntimeError(f"Unknown {system=}")
+
+
+def sanity(system: str, variant: str, config: dict[str, str]) -> bool:
+    import mpi4py
+    mpi4py_config = mpi4py.get_config()
+    return mpi4py_config['mpicc'].endswith(config["MPICC"])

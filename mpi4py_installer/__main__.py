@@ -80,8 +80,14 @@ def run():
 
     pip_cmd_str = pip_cmd(config)
 
-    logger.info(f"Installing mpi4py")
+    logger.info("Installing mpi4py")
     pip_install_mpi4py(pip_cmd_str, site.init(system, variant))
+
+    logger.info("Checking mpi4py install config")
+    sanity = site.sanity(system, variant, config)
+    logger.info(f"{sanity=}")
+    if not sanity:
+        logger.critical("Sanity check FAILED")
 
 
 if __name__ == "__main__":
