@@ -1,4 +1,4 @@
-from .runners import BashRunner 
+from .runners import ShellRunner 
 
 import sys
 import logging
@@ -22,7 +22,7 @@ def load_site(site):
 def pip_find_mpi4py():
     logger.debug("Checking for installed versions of mpi4py")
     
-    with BashRunner() as bash_runner:
+    with ShellRunner() as bash_runner:
         out = bash_runner.run(
             "pip freeze",
             capture_output=True
@@ -76,7 +76,7 @@ def pip_cmd(config):
 def pip_uninstall_mpi4py():
     logger.debug(f"Uninstalling mpi4py")
 
-    with BashRunner() as bash_runner:
+    with ShellRunner() as bash_runner:
         out = bash_runner.run(
             "pip uninstall -y mpi4py",
             capture_output=True
@@ -93,7 +93,7 @@ def pip_install_mpi4py(pip_cmd, init):
     cmd = f"{pip_cmd} "+ "install --no-cache-dir --no-binary=:all: mpi4py"
     logger.debug(f"Installing mpi4py")
 
-    with BashRunner() as bash_runner:
+    with ShellRunner() as bash_runner:
         logger.info(f"Running init command: {init}")
         out = bash_runner.run(init, capture_output=True)
 

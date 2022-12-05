@@ -6,7 +6,7 @@ import sys
 from contextlib import AbstractContextManager
 
 
-class BashRunner(AbstractContextManager):
+class ShellRunner(AbstractContextManager):
     """Run multiple bash scripts with persisent environment.
 
     Environment is stored to "env" member between runs. This can be updated
@@ -32,15 +32,15 @@ class BashRunner(AbstractContextManager):
             f"os.write({self._fd_write}, \"\\0\".encode())"
         ])
         self._env_snapshot = "\n".join([
-            "__bashrunner_exit_code_trap=$?",
+            "__ShellRunner_exit_code_trap=$?",
             f"{sys.executable} -c '{write_env_pycode}'",
-            "exit $__bashrunner_exit_code_trap"
+            "exit $__ShellRunner_exit_code_trap"
         ])
 
 
     def run(self, cmd, **opts):
         if not self._fd_open:
-            raise RuntimeError("BashRunner is already closed")
+            raise RuntimeError("ShellRunner is already closed")
 
         cmd += "\n" + self._env_snapshot
         result = subprocess.run(
