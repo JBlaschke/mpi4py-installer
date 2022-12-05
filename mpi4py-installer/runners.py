@@ -14,11 +14,16 @@ class BashRunner(AbstractContextManager):
     """
 
     def __init__(self, env=None):
+        self.env: dict[str, str]
         if env is None:
             env = dict(os.environ)
-        self.env: Dict[str, str] = env
+        self.env = env
 
+        self._fd_read: int
+        self._fd_write: int
         self._fd_read, self._fd_write = os.pipe()
+        self._fd_open = True
+
         write_env_pycode = ";".join([
             "import os",
             "import json",
@@ -34,7 +39,7 @@ class BashRunner(AbstractContextManager):
 
 
     def run(self, cmd, **opts):
-        if self._fd_read is None:
+        if not self._fd_open:
             raise RuntimeError("BashRunner is already closed")
 
         cmd += "\n" + self._env_snapshot
@@ -57,11 +62,10 @@ class BashRunner(AbstractContextManager):
 
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self._fd_read:
+        if self._fd_open:
             os.close(self._fd_read)
             os.close(self._fd_write)
-            self._fd_read = None
-            self._fd_write = None
+            self._fd_open = False
 
 
     def __del__(self):

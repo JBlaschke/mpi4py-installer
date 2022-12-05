@@ -1,25 +1,25 @@
 from os import environ
 
 
-def determine_system():
+def determine_system() -> str:
     return environ["NERSC_HOST"]
 
 
-def available_variants(system):
+def available_variants(system: str) -> list[str]:
     if system == "perlmutter":
         return ["cpu:gnu", "gpu:gnu", "gpu:nvidia"]
     else:
         raise RuntimeError(f"Unknown {system=}")
 
 
-def auto_variant(system):
+def auto_variant(system: str) -> str:
     if system == "perlmutter":
         return "gpu:gnu"
     else:
         raise RuntimeError(f"Unknown {system=}")
 
 
-def config(system, variant):
+def config(system: str, variant: str) -> dict[str, str]:
     config = {"sys_prefix": "/global/common/software/nersc"}
 
     if system == "perlmutter":
@@ -39,7 +39,7 @@ def config(system, variant):
     return config
 
 
-def init(system, variant):
+def init(system: str, variant: str) -> str:
     if system == "perlmutter":
         if variant == "cpu:gnu":
             return "module load PrgEnv-gnu"

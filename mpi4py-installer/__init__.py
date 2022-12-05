@@ -90,7 +90,7 @@ def pip_uninstall_mpi4py():
 
 
 def pip_install_mpi4py(pip_cmd, init):
-    cmd = f"{pip_cmd} "+ "install --no-cache-dir --no-binary=mpi4py mpi4py"
+    cmd = f"{pip_cmd} "+ "install --no-cache-dir --no-binary=:all: mpi4py"
     logger.debug(f"Installing mpi4py")
 
     with BashRunner() as bash_runner:
