@@ -14,6 +14,7 @@ def available_variants(system: str) -> list[str]:
 
 
 def auto_variant(system: str) -> str:
+    logger.debug(f"{system=}")
     if system == "perlmutter":
         return "gpu:gnu"
     else:
@@ -21,8 +22,9 @@ def auto_variant(system: str) -> str:
 
 
 def config(system: str, variant: str) -> dict[str, str]:
-    config = {"sys_prefix": "/global/common/software/nersc"}
+    logger.debug(f"{system=}, {variant=}")
 
+    config = {"sys_prefix": "/global/common/software/nersc"}
     if system == "perlmutter":
         if variant == "cpu:gnu":
             config["MPICC"] = "cc -shared"
@@ -41,6 +43,8 @@ def config(system: str, variant: str) -> dict[str, str]:
 
 
 def init(system: str, variant: str) -> str:
+    logger.debug(f"{system=}, {variant=}")
+
     if system == "perlmutter":
         if variant == "cpu:gnu":
             return "module load PrgEnv-gnu"
@@ -55,6 +59,8 @@ def init(system: str, variant: str) -> str:
 
 
 def sanity(system: str, variant: str, config: dict[str, str]) -> bool:
+    logger.debug(f"{system=}, {variant=}, {config=}")
+
     import mpi4py
     mpi4py_config = mpi4py.get_config()
     logger.debug(f"Sanity: {mpi4py_config=}")
