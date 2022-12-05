@@ -1,3 +1,4 @@
+from .. import logger
 from os import environ
 
 
@@ -56,4 +57,5 @@ def init(system: str, variant: str) -> str:
 def sanity(system: str, variant: str, config: dict[str, str]) -> bool:
     import mpi4py
     mpi4py_config = mpi4py.get_config()
+    logger.debug(f"Sanity: {mpi4py_config=}")
     return mpi4py_config['mpicc'].endswith(config["MPICC"])

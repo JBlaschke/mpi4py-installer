@@ -24,7 +24,7 @@ def pip_find_mpi4py():
     
     with ShellRunner() as bash_runner:
         out = bash_runner.run(
-            "pip freeze",
+            f"{sys.executable} -m pip freeze",
             capture_output=True
         )
 
@@ -62,7 +62,7 @@ def pip_cmd(config):
         pip_cmd += f"CFLAGS=\"{config['CFLAGS']}\""
         pip_cmd += " "
 
-    pip_cmd += "pip"
+    pip_cmd += f"{sys.executable} -m pip"
     pip_cmd += " "
 
     if use_user:
@@ -78,7 +78,7 @@ def pip_uninstall_mpi4py():
 
     with ShellRunner() as bash_runner:
         out = bash_runner.run(
-            "pip uninstall -y mpi4py",
+            f"{sys.executable} -m pip uninstall -y mpi4py",
             capture_output=True
         )
 
