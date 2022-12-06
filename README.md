@@ -8,8 +8,20 @@ that `mpi4py` is built and linked against the system's MPI implementation.
 ## Features
 
 `mpi4py_installer` is detects the system it's running on automatically -- based
-on the site's automatic detection rules. Note that it does not detect the site,
-this needs to be specified using `--site=<site name>`.
+on the site's automatic detection rules.
+
+### Automatic Everything
+
+`mpi4py_installer` detects the site (HPC center) and system that it's running
+on. It also comes configured with default build variants for each system. If
+you are happy with the sysadmin's defaults, all you need to do is run:
+
+```
+python -m mpi4py_installer
+```
+
+That's it! But there are many ways you can take control -- as described in the
+following sections.
 
 ### Automatically Detect System
 
