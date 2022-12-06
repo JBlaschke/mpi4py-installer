@@ -1,6 +1,8 @@
 from . import logger, load_site, pip_find_mpi4py, pip_cmd, is_system_prefix
 from . import pip_uninstall_mpi4py, pip_install_mpi4py
 
+from .sites import auto_site
+
 import argparse
 
 
@@ -10,7 +12,7 @@ def run():
         description = "Make (re)installing mpi4py on HPC systesm easy."
     )
     parser.add_argument(
-        "--site", type=str, default="nersc",
+        "--site", type=str,
         help="Install site. (default=nersc)"
     )
     parser.add_argument(
@@ -35,7 +37,14 @@ def run():
     logger.setLevel(args.log_level)
     logger.debug(f"Runtime arguments={args}")
 
-    site = load_site(args.site)
+    if args.site is None:
+        dsite = auto_site()
+        if dsite == None:
+            raise RuntimeError("You must specify a site")
+        logger.info(f"Determined site as: {dsite}")
+        site = load_site(dsite)
+    else:
+        site = load_site(args.site)
 
     if args.system is None:
         system = site.determine_system()

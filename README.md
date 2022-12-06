@@ -57,8 +57,15 @@ Do you want to add your site or system to the machines supports out-of-the-box?
 Easy, submit a PR to add `site_name.py` to `sites/`. `site_name.py` needs to
 define the following functions:
 
+* `check_site() -> bool`: a function that is true only when run on your center's
+systems -- `mpi4py_installer` will call this function for every registered site.
+If more than on site's `check_site()` returns `True`, automatic site resolution
+fails. Often this is done by checking for the presence of a particular
+environment variable, or the machine's hostname.
 * `determine_system() -> str`: a function that can dermine the name
-(returned as a string) of the system that it's currently running on.
+(returned as a string) of the system that it's currently running on. Often this
+is done by checking for the presence of a particular environment variable, or
+the machine's hostname.
 * `available_variants(system: str) -> list[str]` returns a list of all avialable
 variants on `system`.
 * `auto_variant(system: str) -> str`: a function that returns the name of the
