@@ -14,10 +14,11 @@ current = site_packages.parent
 # The parent directory of the site_packages directory is our shiv cache
 cache_path = current.parent
 
-name_a, name_b, build_id = current.name.split('_')
+name_p = current.name.split('_')
+build_id = name_p[-1]
 # The `mpi4py_installer` name contains an underscore, so we have to put the
 # first occurance of `_` back into the name after `split` has removed it.
-name = f"{name_a}_{name_b}"
+name = "_".join(name_p[:-1])
 
 if __name__ == "__main__":
     for path in cache_path.iterdir():
