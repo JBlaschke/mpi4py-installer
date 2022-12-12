@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ver=0.2.0
+ver=0.3.0
 
 pushd $(readlink -f $(dirname ${BASH_SOURCE[0]}))
 

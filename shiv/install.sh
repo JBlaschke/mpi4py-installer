@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ver="0.2.0"
+ver="0.3.0"
 src="JBlaschke/mpi4py-installer"
 name="mpi4py_installer"
 
