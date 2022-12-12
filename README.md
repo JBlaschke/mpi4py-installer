@@ -8,7 +8,16 @@ that `mpi4py` is built and linked against the system's MPI implementation.
 ## Features
 
 `mpi4py_installer` is detects the system it's running on automatically -- based
-on the site's automatic detection rules.
+on the site's automatic detection rules. If your site supports full automatic
+configuration, then all you need to do is run:
+
+```
+curl -fsSL https://raw.githubusercontent.com/JBlaschke/mpi4py-installer/main/shiv/install.sh | sh
+```
+
+from within your python or conda environment. For more control, it is
+recommended that you `pip install mpi4py-installer` and run `mpi4py_installer`
+as a python package.
 
 ### Automatic Everything
 
