@@ -12,7 +12,7 @@ on the site's automatic detection rules. If your site supports full automatic
 configuration, then all you need to do is run:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/JBlaschke/mpi4py-installer/main/shiv/install.sh | sh
+curl -fsSL https://github.com/JBlaschke/mpi4py-installer/releases/latest/download/install.sh | sh
 ```
 
 from within your python or conda environment. For more control, it is
