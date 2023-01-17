@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mpi4py-installer",
-    version="0.3.1",
+    version="0.3.2",
     author="Johannes Blaschke",
     author_email="jblaschke@lbl.gov",
     description="No more copy+paste of magic bash commands while installing mpi4py on HPC systems.",

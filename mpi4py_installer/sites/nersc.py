@@ -3,6 +3,10 @@ from os import environ
 
 
 def check_site() -> bool:
+    # Guard to allow local config on NERSC Systems
+    if "MPI4PY_LOCAL" in environ:
+        return False
+
     return "NERSC_HOST" in environ
 
 

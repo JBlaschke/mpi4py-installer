@@ -3,6 +3,7 @@ from .. import load_site, logger
 
 # register new sites here
 available_sites = [
+    "local",
     "nersc"
 ]
 

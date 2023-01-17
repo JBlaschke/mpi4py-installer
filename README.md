@@ -104,6 +104,14 @@ go here.
 * `sanity(system: str, variant: str, config: dict[str, str]) -> bool` returns
 true if the `mpi4py` configuration matches what you expect.
 
+### Local Site Configuration Files
+
+By setting the `MPI4PY_LOCAL` environment variable to point to a local site
+configuration file, you can create system-specific local site configs that are
+not included in this package (e.g. you might want to set up local configurations
+withouth publishing them). Take a look at `examples/site_config.py` for an
+example.
+
 ### Logging and Debugging
 
 We recommend that you log the inputs to your site-configuration functions, eg:
