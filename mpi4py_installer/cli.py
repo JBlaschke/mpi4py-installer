@@ -7,9 +7,13 @@ import argparse
 
 
 def run():
+    """
+    Run the mpi4py installer CLI using ArgumentParser inputs
+    """
+    # Set up CLI 
     parser = argparse.ArgumentParser(
-        prog = "mpi4py-installer",
-        description = "Make (re)installing mpi4py on HPC systesm easy."
+        prog="mpi4py-installer",
+        description="Make (re)installing mpi4py on HPC systesm easy."
     )
     parser.add_argument(
         "--site", type=str,
@@ -34,9 +38,12 @@ def run():
 
     args = parser.parse_args()
 
+    # Set Logger Level
     logger.setLevel(args.log_level)
     logger.debug(f"Runtime arguments={args}")
 
+    # Load site -- if no site is provided, use the auto_site function, which
+    # will run check_site for each of the available sites.
     if args.site is None:
         dsite = auto_site()
         if dsite == None:
@@ -46,6 +53,8 @@ def run():
     else:
         site = load_site(args.site)
 
+    # Set the system using `determine_system` -- the CLI flag can be used to
+    # overwrite the output from `determine_system`.
     if args.system is None:
         system = site.determine_system()
         logger.info(f"Determined system as: {system}")
@@ -53,12 +62,9 @@ def run():
         system = args.system
         logger.info(f"Using: {system=}")
 
-    if args.variant is None:
-        variant = site.auto_variant(system)
-        logger.info(f"Automatically setting {variant=}")
-    else:
-        variant = args.variant
-
+    # If the CLI specifies `show_variants`, then print all avalailable variants,
+    # and exit (do not install anything). The result returned by `auto_variant`
+    # is highlighted using `*`
     if args.show_variants:
         print(f"Available variants for {system=}")
         auto_variant = site.auto_variant(system)
@@ -70,6 +76,14 @@ def run():
                 print(f"    {v}")
 
         exit(0)
+
+    # Set the variant: if no variant is specified on the CLI, then the site's
+    # `auto_variant` is used.
+    if args.variant is None:
+        variant = site.auto_variant(system)
+        logger.info(f"Automatically setting {variant=}")
+    else:
+        variant = args.variant
 
     config = site.config(system, variant)
     logger.debug(f"Loaded {config=}")

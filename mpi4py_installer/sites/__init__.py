@@ -9,6 +9,16 @@ available_sites = [
 
 
 def auto_site() -> str:
+    """
+    auto_site() -> str
+
+
+    Check each of the sites registered in `available_sites` if it's `check_site`
+    returns true.
+
+    * If one site's `check_site` returns `True` return that site's name.
+    * If more than one site's `check_site` returns `true` then return `None`
+    """
     logger.debug("Searching for compatible sites")
 
     found = None
