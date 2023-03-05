@@ -17,7 +17,7 @@ def run():
     )
     parser.add_argument(
         "--site", type=str,
-        help="Install site. (default=nersc)"
+        help="Install site."
     )
     parser.add_argument(
         "--log-level", type=int, default=20,
@@ -34,6 +34,14 @@ def run():
     parser.add_argument(
         "--show-variants", action="store_true",
         help="Display variants for this site and system"
+    )
+    parser.add_argument(
+        "--user", action="store_true",
+        help="Install to USER_BASE instead"
+    )
+    parser.add_argument(
+        "--overwrite_system", action="store_true",
+        help="Overwrite system prefix"
     )
 
     args = parser.parse_args()
@@ -91,20 +99,28 @@ def run():
     has_mpi4py = pip_find_mpi4py()
     logger.info(f"{has_mpi4py=}")
 
-    if has_mpi4py:
-        logger.info("mpi4py install detected! uninstalling current version")
-        pip_uninstall_mpi4py()
-
     if is_system_prefix(config):
         logger.warning(" ".join([
             "Your python version shares the system prefix.",
             "Did you forget to activate your python environment?"
         ]))
 
+        if not args.overwrite_system:
+            logger.critical(" ".join([
+                "Will not overwrite install in system prefix. Use: "
+                "--overwrite_system to force install in system prefix."
+            ]))
+
+            exit(1)
+
+    if has_mpi4py:
+        logger.info("mpi4py install detected! uninstalling current version")
+        pip_uninstall_mpi4py()
+
     pip_cmd_str = pip_cmd(config)
 
     logger.info("Installing mpi4py")
-    pip_install_mpi4py(pip_cmd_str, site.init(system, variant))
+    pip_install_mpi4py(pip_cmd_str, args.user, site.init(system, variant))
 
     logger.info("Checking mpi4py install config")
     sanity = site.sanity(system, variant, config)
