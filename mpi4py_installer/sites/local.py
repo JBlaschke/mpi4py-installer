@@ -8,44 +8,49 @@ def check_site() -> bool:
 
 
 def determine_system() -> str:
-    return "local"
+    host = environ.get("MPI4PY_HOST", default="default:default")
+    host, _ = host.split(":")
+    return host
 
 
 def available_variants(system: str) -> list[str]:
-    return ["default", "site:<site_variant>"]
+    host = environ.get("MPI4PY_HOST", default="default:default")
+    _, variants = host.split(":")
+    return variants.split(",")
 
 
 def auto_variant(system: str) -> str:
-    return "default"
+    logger.debug(f"{system=}")
+    variants = available_variants(system)
+    return variants[0]
 
 
 def config(system: str, variant: str) -> dict[str, str]:
-    config = dict()
+    logger.debug(f"{system=}, {variant=}")
 
-    if variant == "default":
+    config = dict()
+    if system == "default":
         config["sys_prefix"] = "None"
         config["MPICC"] = "mpicc"
-    elif variant.startswith("site:"):
+    else:
         site_config = SourceFileLoader(
             "local_site_config", environ["MPI4PY_LOCAL"]
         ).load_module()
         return site_config.config(variant)
-    else:
-        raise RuntimeError(f"Unknown {variant=}")
 
     return config
 
 
 def init(system: str, variant: str) -> str:
-    if variant == "default":
+    logger.debug(f"{system=}, {variant=}")
+
+    if system == "default":
         return ""
-    elif variant.startswith("site:"):
+    else:
         site_config = SourceFileLoader(
             "local_site_config", environ["MPI4PY_LOCAL"]
         ).load_module()
         return site_config.init(variant)
-    else:
-        raise RuntimeError(f"Unknown {variant=}")
 
 
 def sanity(system: str, variant: str, config: dict[str, str]) -> bool:
