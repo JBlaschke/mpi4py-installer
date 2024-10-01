@@ -70,6 +70,9 @@ def pip_cmd(config):
     if "CFLAGS" in config:
         pip_cmd += f"CFLAGS=\"{config['CFLAGS']}\""
         pip_cmd += " "
+    if "LDFLAGS" in config:
+        pip_cmd += f"LDFLAGS=\"{config['LDFLAGS']}\""
+        pip_cmd += " "
 
     pip_cmd += f"{sys.executable} -m pip"
     pip_cmd += " "
@@ -79,7 +82,7 @@ def pip_cmd(config):
 
     logger.debug(f"Done configuring pip command")
 
-    return pip_cmd
+    return pip_cmd.strip()  # clean up any unnecessary spaces 
 
 
 def pip_uninstall_mpi4py():
