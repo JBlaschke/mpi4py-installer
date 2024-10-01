@@ -62,8 +62,10 @@ class ShellRunner(AbstractContextManager):
         # [payload length (plen)][json containing os.environ]
         #  ^^^^ _BSC bytes ^^^^   ^^^^^^^ plen bytes ^^^^^^^
         # read json size first:
-        env_json_len = os.read(self._fd_read, self._BSC)
-        env_json_len = int.from_bytes(env_json_len, byteorder="big", signed=False)
+        env_json_len_bytes = os.read(self._fd_read, self._BSC)
+        env_json_len       = int.from_bytes(
+            env_json_len_bytes, byteorder="big", signed=False
+        )
         # read env json
         env_json = os.read(self._fd_read, env_json_len).decode()
         self.env = json.loads(env_json)
