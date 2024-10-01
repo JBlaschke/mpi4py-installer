@@ -6,6 +6,7 @@ import importlib
 
 from pathlib             import Path
 from importlib.machinery import SourceFileLoader
+from types               import ModuleType
 
 
 logger = logging.getLogger(__name__)
@@ -13,16 +14,28 @@ FORMAT = "[%(levelname)8s | %(filename)s:%(lineno)s - %(module)s.%(funcName)s() 
 logging.basicConfig(format=FORMAT)
 
 
-def load_site(site):
+def load_site(site: str) -> ModuleType:
+    """
+    load_site(site: str) ->ModuleType
+
+
+    Loads a site module stored in the `mpi4py_installer.sites` tree
+    """
     logger.debug(f"Loading site: {site}")
     site_module = importlib.import_module(
         f".sites.{site}", package="mpi4py_installer"
     )
-    logger.debug("Done loading site")
     return site_module
 
 
-def load_user_site(user_site, user_site_root):
+def load_user_site(user_site:str , user_site_root: Path) -> ModuleType:
+    """
+    load_user_site(user_site:str , user_site_root: Path) -> ModuleType
+
+
+    Loads a user-defined site module stored at `user_site_root`
+    """
+    logger.debug(f"Loading user site: {user_site} at {user_site_root}")
     return SourceFileLoader(
         "user_site", str(user_site_root / Path(user_site + ".py"))
     ).load_module()

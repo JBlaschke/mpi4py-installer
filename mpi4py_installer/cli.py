@@ -51,7 +51,10 @@ def run():
                 "Could not decide on which site to use automatically."
             )
             raise RuntimeError("You must specify a site")
+
         logger.info(f"Determined site as: {dsite}")
+
+        assert dsite is not None  # coerce mypy type narrowing
         site = load_site(dsite)
     else:
         site = load_site(args.site)
