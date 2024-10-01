@@ -4,6 +4,9 @@ import sys
 import logging
 import importlib
 
+from pathlib             import Path
+from importlib.machinery import SourceFileLoader
+
 
 logger = logging.getLogger(__name__)
 FORMAT = "[%(levelname)8s | %(filename)s:%(lineno)s - %(module)s.%(funcName)s() ] %(message)s"
@@ -17,6 +20,12 @@ def load_site(site):
     )
     logger.debug("Done loading site")
     return site_module
+
+
+def load_user_site(user_site, user_site_root):
+    return SourceFileLoader(
+        "user_site", str(user_site_root / Path(user_site + ".py"))
+    ).load_module()
 
 
 def pip_find_mpi4py():

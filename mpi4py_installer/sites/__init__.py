@@ -1,19 +1,13 @@
 import json
 
-from ..      import load_site, logger
+from ..      import load_site, load_user_site, logger
 from os      import environ
 from pathlib import Path
 
 
-# register new sites here
-available_sites = [
-    "local",
-    "nersc"
-]
-
-def find_available_sites() -> tuple[list[str], list[str]]:
+def find_available_sites() -> tuple[list[str], list[str], Path]:
     """
-    find_available_sites() -> list[str]
+    find_available_sites() -> tuple[list[str], list[str], Path]
 
 
     Returns a list of valid site names. These are determiend by looking at the
@@ -45,12 +39,12 @@ def find_available_sites() -> tuple[list[str], list[str]]:
             append_site(user_sites, x)
 
     logger.debug(f"Found: {sites=}, {user_sites}")
-    return sites, user_sites
+    return sites, user_sites, user_site_path
 
 
 def auto_site() -> str|None:
     """
-    auto_site() -> str
+    auto_site() -> str|None
 
 
     Check each of the sites registered in `available_sites` if it's `check_site`
@@ -61,6 +55,7 @@ def auto_site() -> str|None:
     """
     logger.debug("Searching for compatible sites")
 
+    available_sites, user_sites, user_sites_root = find_available_sites()
     found = None
     for s in available_sites:
         site = load_site(s)
@@ -72,29 +67,42 @@ def auto_site() -> str|None:
             logger.critical("Warning multiple compatible sites detected!")
             return None
 
+    for s in user_sites:
+        site = load_user_site(s, user_sites_root)
+        if (found is None) and site.check_site():
+            logger.debug(f"Found: site={s}")
+            found = s
+        elif (found is not None) and site.check_site():
+            logger.debug(f"Found second site candidate: {s}")
+            logger.critical("Warning multiple compatible sites detected!")
+            return None
+
     return found
 
 
-def load_config_file(config_file_path: str) -> dict[str, str]:
+def load_config_file(config_file_path: Path) -> dict[str, str]|None:
     """
-    load_config_file(config_file_path: str) -> dict[str, str]
+    load_config_file(config_file_path: Path) -> dict[str, str]|None
+
 
     Load a json at the location of `config_file_path`. Does some basic
     validation (file is a json file, file exists). The contests of the json
     object are not validated.
+
+    * If the config file does not exist, or if it's not a json file, then
+      return None
     """
-    path = Path(config_file_path)
+    if not config_file_path.is_file():
+        logger.critical(f"File {config_file_path=} does not exist")
+        return None
 
-    if not path.is_file():
-        logger.critical(f"File {path=} does not exist")
+    if config_file_path.suffix != ".json":
+        logger.critical(
+            f"Cannot load config file at {config_file_path=} -- not a json"
+        )
+        return None
 
-
-
-    if path.suffix != ".json":
-        logger.critical(f"Cannot load config file at {path=} -- not a json")
-        return dict()
-
-    with open(path, "r") as f:
+    with open(config_file_path, "r") as f:
         data = json.load(f)
 
     return data

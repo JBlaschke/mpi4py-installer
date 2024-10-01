@@ -17,7 +17,7 @@ def run():
     )
     parser.add_argument(
         "--site", type=str,
-        help="Install site. (default=nersc)"
+        help="Install site (uses `auto_site` by default)"
     )
     parser.add_argument(
         "--log-level", type=int, default=20,
@@ -47,6 +47,9 @@ def run():
     if args.site is None:
         dsite = auto_site()
         if dsite == None:
+            logger.critical(
+                "Could not decide on which site to use automatically."
+            )
             raise RuntimeError("You must specify a site")
         logger.info(f"Determined site as: {dsite}")
         site = load_site(dsite)
