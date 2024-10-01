@@ -1,8 +1,28 @@
 import json
 
-from ..          import load_site, load_user_site, logger
+from ..          import load_site, load_user_site, logger, Singleton
 from os          import environ
 from pathlib     import Path
+from dataclasses import dataclass
+
+
+@dataclass
+class Site(metaclass=Singleton):
+    """
+    class Site(metaclass=Singleton):
+        path
+        user_path
+
+
+    Stores site and user site path information. The user site is given by the
+    MPI4PY_INSTALLER_SITE_CONFIG environment variable. Site is a global
+    singleton: the paths are resolved once, and then retrieved from global
+    memory on subsequent calls to the constructor.
+    """
+    path: Path = Path(__file__).parent.resolve()
+    user_path: Path = Path(
+        environ.get("MPI4PY_INSTALLER_SITE_CONFIG", default="~/.mpi4py")
+    ).resolve()
 
 
 def find_available_sites() -> tuple[list[str], list[str], Path]:
@@ -15,6 +35,7 @@ def find_available_sites() -> tuple[list[str], list[str], Path]:
     then by enumerating all non-dunder .py files.
     """
     logger.debug("Searching for site definitions ...")
+    site = Site()
 
     def append_site(site_list: list[str], site: Path):
         if site.name.startswith("__") and site.name.endswith("__.py"):
@@ -24,22 +45,18 @@ def find_available_sites() -> tuple[list[str], list[str], Path]:
     sites: list[str] = list()
     user_sites: list[str] = list()
 
-    site_path = Path(__file__).parent.resolve()
-    logger.debug(f"Searching {site_path=}")
-    for x in site_path.glob("*.py"):
+    logger.debug(f"Searching {site.path=}")
+    for x in site.path.glob("*.py"):
         append_site(sites, x)
 
-    user_site_path = Path(
-        environ.get("MPI4PY_INSTALLER_SITE_CONFIG", default="~/.mpi4py")
-    ).resolve()
-    if user_site_path.is_dir():
-        logger.debug(f"Searching {user_site_path=}")
+    if site.user_path.is_dir():
+        logger.debug(f"Searching {site.user_path=}")
 
-        for x in user_site_path.glob("*.py"):
+        for x in site.user_path.glob("*.py"):
             append_site(user_sites, x)
 
     logger.debug(f"Found: {sites=}, {user_sites}")
-    return sites, user_sites, user_site_path
+    return sites, user_sites, site.user_path
 
 
 def auto_site() -> str|None:

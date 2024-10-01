@@ -1,4 +1,5 @@
-from .runners import ShellRunner 
+from .runners   import ShellRunner
+from .singleton import Singleton
 
 import sys
 import logging
@@ -16,11 +17,13 @@ logging.basicConfig(format=FORMAT)
 
 def load_site(site: str) -> ModuleType:
     """
-    load_site(site: str) ->ModuleType
+    load_site(site: str) -> ModuleType
 
 
-    Loads a site module stored in the `mpi4py_installer.sites` tree
+    Loads a site module stored in the `mpi4py_installer.sites` tree. The loaded
+    module is returned as a python module (to be used later on).
     """
+
     logger.debug(f"Loading site: {site}")
     site_module = importlib.import_module(
         f".sites.{site}", package="mpi4py_installer"
@@ -33,7 +36,8 @@ def load_user_site(user_site:str , user_site_root: Path) -> ModuleType:
     load_user_site(user_site:str , user_site_root: Path) -> ModuleType
 
 
-    Loads a user-defined site module stored at `user_site_root`
+    Loads a user-defined site module stored at `user_site_root`. The loaded
+    moduel is returned as a python module (to be used later on).
     """
     logger.debug(f"Loading user site: {user_site} at {user_site_root}")
     return SourceFileLoader(
