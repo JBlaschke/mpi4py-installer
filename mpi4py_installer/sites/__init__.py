@@ -1,8 +1,8 @@
 import json
 
-from ..      import load_site, load_user_site, logger
-from os      import environ
-from pathlib import Path
+from ..          import load_site, load_user_site, logger
+from os          import environ
+from pathlib     import Path
 
 
 def find_available_sites() -> tuple[list[str], list[str], Path]:
@@ -80,13 +80,17 @@ def auto_site() -> str|None:
     return found
 
 
-def load_config_file(config_file_path: Path) -> dict[str, str]|None:
+CONFIG_DICT = dict[str, dict[str, str]]
+
+
+def load_config_file(config_file_path: Path) -> CONFIG_DICT|None:
     """
-    load_config_file(config_file_path: Path) -> dict[str, str]|None
+    CONFIG_DICT = dict[str, dict[str, str]]
+    load_config_file(config_file_path: Path) -> CONFIG_DICT|None
 
 
     Load a json at the location of `config_file_path`. Does some basic
-    validation (file is a json file, file exists). The contests of the json
+    validation (file is a json file, file exists). The contents of the json
     object are not validated.
 
     * If the config file does not exist, or if it's not a json file, then
@@ -106,3 +110,26 @@ def load_config_file(config_file_path: Path) -> dict[str, str]|None:
         data = json.load(f)
 
     return data
+
+
+def site_systems(site_config: CONFIG_DICT) -> list[str]:
+    """
+    CONFIG_DICT = dict[str, dict[str, str]]
+    site_systems(site_config: CONFIG_DICT) -> list[str]
+
+
+    Return a list of available sites descirbed in the config dictionary
+    """
+    return [k for k in site_config.keys()]
+
+
+def system_variants(site_config: CONFIG_DICT, system: str) -> list[str]:
+    """
+    CONFIG_DICT = dict[str, dict[str, str]]
+    system_variants(site_config: CONFIG_DICT, system: str) -> list[str]
+
+
+    Return a list of valiable variants descirbed in the config dictionary for
+    the specified system
+    """
+    return [k for k in site_config[system].keys()]
