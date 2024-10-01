@@ -74,7 +74,6 @@ def is_system_prefix(config):
 
 def pip_cmd(config):
     logger.debug("Configuring pip command")
-    use_user = is_system_prefix(config)
 
     pip_cmd = ""
 
@@ -93,9 +92,6 @@ def pip_cmd(config):
 
     pip_cmd += f"{sys.executable} -m pip"
     pip_cmd += " "
-
-    if use_user:
-        pip_cmd += "--user"
 
     logger.debug(f"Done configuring pip command")
 
@@ -118,9 +114,12 @@ def pip_uninstall_mpi4py():
     logger.debug("Done uninstalling mpi4py")
 
 
-def pip_install_mpi4py(pip_cmd, init):
-    cmd = f"{pip_cmd} "+ "install --no-cache-dir --no-binary=:all: mpi4py"
+def pip_install_mpi4py(pip_cmd, use_user, init):
     logger.debug(f"Installing mpi4py")
+
+    cmd = f"{pip_cmd} " + "install --no-cache-dir --no-binary=:all: mpi4py"
+    if use_user:
+        cmd += " --user"
 
     with ShellRunner() as bash_runner:
         logger.info(f"Running init command: {init}")
