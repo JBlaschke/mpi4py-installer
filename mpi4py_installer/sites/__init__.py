@@ -61,23 +61,24 @@ def find_available_sites() -> tuple[list[str], list[str], Path]:
     return sites, user_sites, site.user_path
 
 
-def auto_site() -> str|None:
+def auto_site() -> tuple[str|None, bool]:
     """
-    auto_site() -> str|None
+    auto_site() -> tuple[str|None, bool]
 
 
-    Check each of the sites registered in `available_sites` if it's `check_site`
-    returns true.
-
+    Check each of the sites if it's `check_site` returns `True`. 
     * If one site's `check_site` returns `True` return that site's name.
     * If more than one site's `check_site` returns `true` then return `None`
+
+    Returns: (auto-dected site name, flag)
+    * flag is `True` only if the returned site name is a user-defined site
     """
 
     logger.debug("Searching for compatible sites")
 
-    available_sites, user_sites, user_sites_root = find_available_sites()
+    module_sites, user_sites, user_sites_root = find_available_sites()
     found = None
-    for s in available_sites:
+    for s in module_sites:
         site = load_site(s)
         if (found is None) and site.check_site():
             logger.debug(f"Found: site={s}")
@@ -85,19 +86,21 @@ def auto_site() -> str|None:
         elif (found is not None) and site.check_site():
             logger.debug(f"Found second site candidate: {s}")
             logger.critical("Warning multiple compatible sites detected!")
-            return None
+            return None, False
 
+    flag = False
     for s in user_sites:
         site = load_user_site(s, user_sites_root)
         if (found is None) and site.check_site():
             logger.debug(f"Found: site={s}")
             found = s
+            flag  = True
         elif (found is not None) and site.check_site():
             logger.debug(f"Found second site candidate: {s}")
             logger.critical("Warning multiple compatible sites detected!")
-            return None
+            return None, False
 
-    return found
+    return found, flag
 
 
 CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
@@ -122,6 +125,7 @@ class ConfigStore(metaclass=Singleton):
         module_path = self.file.resolve()
         config_file = module_path.parent / Path(module_path.stem + ".json")
         self.data = load_config_file(config_file)
+
 
     @property
     def valid(self) -> bool:

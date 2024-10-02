@@ -1,10 +1,28 @@
+import hashlib
+import json
+
 from typing import Any
+
+
+def dict_hash(dictionary: dict[str, Any]) -> str:
+    """
+    dict_hash(dictionary: dict[str, Any]) -> str
+
+    MD5 hash of a dictionary.
+    """
+    dhash = hashlib.md5()
+    # We need to sort arguments so {'a': 1, 'b': 2} is
+    # the same as {'b': 2, 'a': 1}
+    encoded = json.dumps(dictionary, sort_keys=True).encode()
+    dhash.update(encoded)
+    return dhash.hexdigest()
 
 
 class Singleton(type):
     """
     class MySingleton(metaclass=Singleton):
         ...
+
     Setting `metaclass=Singleton` in the classes meta descriptor marks it as a
     singleton object: if the object has already been constructed elsewhere in
     the code, subsequent calls to the constructor just return this original
@@ -24,9 +42,10 @@ class Singleton(type):
         constructor and return the instance instead.
         """
 
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(
+        hash = dict_hash({"args": args, "kwargs": kwargs})
+        if (cls, hash) not in cls._instances:
+            cls._instances[(cls, hash)] = super(Singleton, cls).__call__(
                 *args, **kwargs
             )
 
-        return cls._instances[cls]
+        return cls._instances[(cls, hash)]

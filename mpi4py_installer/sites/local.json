@@ -1,0 +1,17 @@
+{
+    "__environment": {
+        "host": "MPI4PY_HOST"
+    },
+    "default": {
+        "gcc": {
+            "sys_prefix": ["/opt/"],
+            "MPICC": "mpicc",
+            "CC": "gcc"
+        },
+        "clang": {
+            "sys_prefix": ["/opt/"],
+            "MPICC": "mpicc",
+            "CC": "clang"
+        }
+    }
+}

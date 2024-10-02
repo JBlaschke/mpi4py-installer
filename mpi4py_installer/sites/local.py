@@ -1,7 +1,9 @@
-from .  import load_config_file
+from .  import ConfigStore
 from .. import logger
 from os import environ
-from importlib.machinery import SourceFileLoader
+
+
+CONFIG = ConfigStore(__file__)
 
 
 def check_site() -> bool:

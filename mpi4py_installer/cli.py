@@ -53,7 +53,7 @@ def run():
     # Load site -- if no site is provided, use the auto_site function, which
     # will run check_site for each of the available sites.
     if args.site is None:
-        dsite = auto_site()
+        dsite, flag = auto_site()
         if dsite == None:
             logger.critical(
                 "Could not decide on which site to use automatically."
