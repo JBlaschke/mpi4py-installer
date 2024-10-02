@@ -23,7 +23,7 @@ class Site(metaclass=Singleton):
     path: Path = Path(__file__).parent.resolve()
     user_path: Path = Path(
         environ.get("MPI4PY_INSTALLER_SITE_CONFIG", default="~/.mpi4py")
-    ).resolve()
+    ).expanduser().resolve()
 
 
 def find_available_sites() -> tuple[list[str], list[str], Path]:
@@ -107,7 +107,7 @@ CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
 
 @dataclass
 class ConfigStore(metaclass=Singleton):
-    file: Path
+    file: str
     data: CONFIG_DICT|None = field(init=False)
 
 
@@ -122,7 +122,7 @@ class ConfigStore(metaclass=Singleton):
         `self.valid` is set to False, and `self.data` is set to None
         """
 
-        module_path = self.file.resolve()
+        module_path = Path(self.file).resolve()
         config_file = module_path.parent / Path(module_path.stem + ".json")
         self.data = load_config_file(config_file)
 

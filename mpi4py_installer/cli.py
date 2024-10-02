@@ -1,7 +1,7 @@
-from . import logger, load_site, pip_find_mpi4py, pip_cmd, is_system_prefix
-from . import pip_uninstall_mpi4py, pip_install_mpi4py
+from . import logger, load_site, load_user_site, pip_find_mpi4py, pip_cmd, \
+    is_system_prefix, pip_uninstall_mpi4py, pip_install_mpi4py
 
-from .sites import auto_site
+from .sites import find_available_sites, auto_site, Site
 
 import argparse
 
@@ -58,14 +58,30 @@ def run():
             logger.critical(
                 "Could not decide on which site to use automatically."
             )
+            mod_sites, usr_sites, usr_path = find_available_sites()
+            print("Valid sites are:")
+            print(f"In mpi4py_installer.sites: {mod_sites}")
+            print(f"In {usr_path}: {usr_sites}")
             raise RuntimeError("You must specify a site")
 
         logger.info(f"Determined site as: {dsite}")
 
         assert dsite is not None  # coerce mypy type narrowing
-        site = load_site(dsite)
+        if flag:
+            site = load_user_site(dsite, Site().user_path)
+        else:
+            site = load_site(dsite)
     else:
-        site = load_site(args.site)
+        mod_sites, usr_sites, usr_path = find_available_sites()
+        if args.site in mod_sites:
+            site = load_site(args.site)
+        elif args.site in usr_sites:
+            site = load_user_site(args.site, usr_path)
+        else:
+            logger.critical(
+                f"Site {args.site} not in {mod_sites=} nor {usr_sites=}"
+            )
+            raise RuntimeError(f"{args.site} could not be found")
 
     # Set the system using `determine_system` -- the CLI flag can be used to
     # overwrite the output from `determine_system`.
