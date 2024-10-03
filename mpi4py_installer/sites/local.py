@@ -3,6 +3,7 @@ from .. import logger
 from os import environ
 
 
+# Loads __file__.json
 CONFIG = ConfigStore(__file__)
 
 

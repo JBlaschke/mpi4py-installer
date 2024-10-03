@@ -12,6 +12,8 @@ class Site(metaclass=Singleton):
     class Site(metaclass=Singleton):
         path
         user_path
+        sites
+        user_sites
 
 
     Stores site and user site path information. The user site is given by the
@@ -24,41 +26,41 @@ class Site(metaclass=Singleton):
     user_path: Path = Path(
         environ.get("MPI4PY_INSTALLER_SITE_CONFIG", default="~/.mpi4py")
     ).expanduser().resolve()
+    sites: list[str] = field(init=False)
+    user_sites: list[str] = field(init=False)
+
+    def __post_init__(self):
+        """
+        __post_init__(self)
 
 
-def find_available_sites() -> tuple[list[str], list[str], Path]:
-    """
-    find_available_sites() -> tuple[list[str], list[str], Path]
+        Populates the list of valid site names. These are determiend by looking
+        at the current directory, and the directory at
+        `MPI4PY_INSTALLER_SITE_CONFIG`, then by enumerating all non-dunder .py
+        files.
+        """
 
+        logger.debug("Searching for site definitions ...")
 
-    Returns a list of valid site names. These are determiend by looking at the
-    current directory, and the directory at `MPI4PY_INSTALLER_SITE_CONFIG`,
-    then by enumerating all non-dunder .py files.
-    """
+        def append_site(site_list: list[str], site: Path):
+            if site.name.startswith("__") and site.name.endswith("__.py"):
+                return
+            site_list.append(site.stem)
 
-    logger.debug("Searching for site definitions ...")
-    site = Site()
+        self.sites: list[str] = list()
+        self.user_sites: list[str] = list()
 
-    def append_site(site_list: list[str], site: Path):
-        if site.name.startswith("__") and site.name.endswith("__.py"):
-            return
-        site_list.append(site.stem)
+        logger.debug(f"Searching {self.path=}")
+        for x in self.path.glob("*.py"):
+            append_site(self.sites, x)
 
-    sites: list[str] = list()
-    user_sites: list[str] = list()
+        if self.user_path.is_dir():
+            logger.debug(f"Searching {self.user_path=}")
 
-    logger.debug(f"Searching {site.path=}")
-    for x in site.path.glob("*.py"):
-        append_site(sites, x)
+            for x in self.user_path.glob("*.py"):
+                append_site(self.user_sites, x)
 
-    if site.user_path.is_dir():
-        logger.debug(f"Searching {site.user_path=}")
-
-        for x in site.user_path.glob("*.py"):
-            append_site(user_sites, x)
-
-    logger.debug(f"Found: {sites=}, {user_sites}")
-    return sites, user_sites, site.user_path
+        logger.debug(f"Found: {self.sites=}, {self.user_sites}")
 
 
 def auto_site() -> tuple[str|None, bool]:
@@ -76,9 +78,10 @@ def auto_site() -> tuple[str|None, bool]:
 
     logger.debug("Searching for compatible sites")
 
-    module_sites, user_sites, user_sites_root = find_available_sites()
+    site_info = Site()
+
     found = None
-    for s in module_sites:
+    for s in site_info.sites:
         site = load_site(s)
         if (found is None) and site.check_site():
             logger.debug(f"Found: site={s}")
@@ -89,8 +92,8 @@ def auto_site() -> tuple[str|None, bool]:
             return None, False
 
     flag = False
-    for s in user_sites:
-        site = load_user_site(s, user_sites_root)
+    for s in site_info.user_sites:
+        site = load_user_site(s, site_info.user_path)
         if (found is None) and site.check_site():
             logger.debug(f"Found: site={s}")
             found = s

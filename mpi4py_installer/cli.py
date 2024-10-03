@@ -1,7 +1,7 @@
 from . import logger, load_site, load_user_site, pip_find_mpi4py, pip_cmd, \
     is_system_prefix, pip_uninstall_mpi4py, pip_install_mpi4py
 
-from .sites import find_available_sites, auto_site, Site
+from .sites import auto_site, Site
 
 import argparse
 
@@ -50,6 +50,11 @@ def run():
     logger.setLevel(args.log_level)
     logger.debug(f"Runtime arguments={args}")
 
+    # Populate settings on any configured sites -- this is a signleton class,
+    # once constructed, the constructor does not search for site modules
+    # again -- instead using the cached information.
+    site_info = Site()
+
     # Load site -- if no site is provided, use the auto_site function, which
     # will run check_site for each of the available sites.
     if args.site is None:
@@ -58,26 +63,26 @@ def run():
             logger.critical(
                 "Could not decide on which site to use automatically."
             )
-            mod_sites, usr_sites, usr_path = find_available_sites()
             print("Valid sites are:")
-            print(f"In mpi4py_installer.sites: {mod_sites}")
-            print(f"In {usr_path}: {usr_sites}")
+            print(f"In mpi4py_installer.sites: {site_info.sites}")
+            print(f"In {site_info.user_path}: {site_info.user_sites}")
             raise RuntimeError("You must specify a site")
 
         logger.info(f"Determined site as: {dsite}")
 
         assert dsite is not None  # coerce mypy type narrowing
         if flag:
-            site = load_user_site(dsite, Site().user_path)
+            site = load_user_site(dsite, site_info.user_path)
         else:
             site = load_site(dsite)
     else:
-        mod_sites, usr_sites, usr_path = find_available_sites()
-        if args.site in mod_sites:
+        if args.site in site_info.sites:
             site = load_site(args.site)
-        elif args.site in usr_sites:
-            site = load_user_site(args.site, usr_path)
+        elif args.site in site_info.user_sites:
+            site = load_user_site(args.site, site_info.user_path)
         else:
+            mod_sites = site_info.sites
+            usr_sites = site_info.user_sites
             logger.critical(
                 f"Site {args.site} not in {mod_sites=} nor {usr_sites=}"
             )
