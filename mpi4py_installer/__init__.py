@@ -69,7 +69,7 @@ def pip_find_mpi4py():
 
 
 def is_system_prefix(config):
-    return sys.prefix.startswith(config["sys_prefix"])
+    return sys.prefix.startswith(config["sys_prefix"]) # TODO: handle malformed config inputs
 
 
 def pip_cmd(config):

@@ -29,7 +29,7 @@ def config(system: str, variant: str) -> dict[str, str]:
     return default_config(CONFIG, system, variant)
 
 
-def init(system: str, variant: str) -> str:
+def init(system: str, variant: str) -> str:  # TODO: init should able to return `None`
     logger.debug(f"{system=}, {variant=}")
     config = default_config(CONFIG, system, variant)
     return config["init"]
