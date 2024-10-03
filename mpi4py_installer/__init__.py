@@ -122,7 +122,7 @@ def pip_install_mpi4py(pip_cmd, use_user, init):
         cmd += " --user"
 
     with ShellRunner() as bash_runner:
-        logger.info(f"Running init command: {init}")
+        logger.info(f"Running init command: {init}")  # TODO: skip if None
         out = bash_runner.run(init, capture_output=True)
 
         logger.debug(f"stderr={out.stderr.decode()}")
