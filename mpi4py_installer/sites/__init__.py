@@ -112,7 +112,7 @@ CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
 class ConfigStore(metaclass=Singleton):
     file: str
     data: CONFIG_DICT|None = field(init=False)
-    config_file: str = field(init=False)
+    config_file: Path = field(init=False)
 
 
     def __post_init__(self):
