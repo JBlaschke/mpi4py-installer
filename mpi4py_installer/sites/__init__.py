@@ -112,6 +112,7 @@ CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
 class ConfigStore(metaclass=Singleton):
     file: str
     data: CONFIG_DICT|None = field(init=False)
+    config_file: str = field(init=False)
 
 
     def __post_init__(self):
@@ -128,6 +129,7 @@ class ConfigStore(metaclass=Singleton):
         module_path = Path(self.file).resolve()
         config_file = module_path.parent / Path(module_path.stem + ".json")
         self.data = load_config_file(config_file)
+        self.config_file = config_file
 
 
     @property
@@ -203,7 +205,7 @@ def site_systems(site_config: CONFIG_DICT) -> list[str]:
     Return a list of available sites descirbed in the config dictionary
     """
 
-    return [k for k in site_config.keys()]
+    return [k for k in site_config.keys() if not k.startswith("__")]
 
 
 def system_variants(site_config: CONFIG_DICT, system: str) -> list[str]:
@@ -218,3 +220,73 @@ def system_variants(site_config: CONFIG_DICT, system: str) -> list[str]:
     system_config = site_config[system]
     assert isinstance(system_config, dict)
     return [k for k in system_config.keys()]
+
+
+def default_check_site(config: ConfigStore) -> str:
+    logger.debug("Using default check_site")
+
+    env_descriptor = config.data["__environment"]
+    host_varname   = env_descriptor["host"]
+    blacklist_vars = env_descriptor["blacklist"]
+
+    logger.debug(f"{host_varname=}, {blacklist_vars=}")
+
+    is_site = host_varname in environ
+    if is_site:
+        if any(blv in environ for blv in blacklist_vars):
+            is_site = False
+
+    logger.debug(f"{is_site=}")
+    return is_site
+
+
+def default_determine_system(config: ConfigStore) -> str:
+    logger.debug("Using default determine_system")
+
+    env_descriptor = config.data["__environment"]
+    host_varname   = env_descriptor["host"]
+
+    logger.debug(f"{host_varname=}, {config.systems=}")
+
+    host_name = environ[host_varname]
+    if host_name not in config.systems:
+        logger.critical(
+            f"No section for '{host_name}' exists in: {config.config_file}"
+        )
+        raise RuntimeError(f"Could not find settings for system '{host_name}'")
+    assert host_name in config.systems
+
+    logger.debug(f"{host_name=}")
+    return host_name
+
+
+def default_available_variants(config: ConfigStore, system: str) -> list[str]:
+    logger.debug("Using default available_variants")
+
+    if system not in config.systems:
+        logger.critical(
+            f"No section for '{system}' exists in: {config.config_file}"
+        )
+        raise RuntimeError(f"Could not find settings for system '{system}'")
+
+    return config.variants(system)
+
+
+def default_config(
+            config: ConfigStore, system: str, variant: str
+        ) -> dict[str, str]:
+    logger.debug(f"Using default config for {system=}, {variant=}")
+
+    if system not in config.systems:
+        logger.critical(
+            f"No section for '{system}' exists in: {config.config_file}"
+        )
+        raise RuntimeError(f"Could not find settings for system '{system}'")
+
+    if variant not in config.variants(system):
+        logger.critical(
+            f"No section for '{variants}' for system '{system}'"
+        )
+        raise RuntimeError(f"Could not find settings for variant '{variant}'")
+
+    return config.data[system][variant]

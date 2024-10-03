@@ -1,4 +1,5 @@
-from .  import ConfigStore
+from .  import ConfigStore, default_check_site, default_determine_system, \
+    default_available_variants, default_config
 from .. import logger
 from os import environ
 
@@ -8,53 +9,30 @@ CONFIG = ConfigStore(__file__)
 
 
 def check_site() -> bool:
-    return "MPI4PY_LOCAL" in environ
+    return default_check_site(CONFIG)
 
 
 def determine_system() -> str:
-    host = environ.get("MPI4PY_HOST", default="default:default")
-    host, _ = host.split(":")
-    return host
+    return default_determine_system(CONFIG)
 
 
 def available_variants(system: str) -> list[str]:
-    host = environ.get("MPI4PY_HOST", default="default:default")
-    _, variants = host.split(":")
-    return variants.split(",")
+    return default_available_variants(CONFIG, system)
 
 
 def auto_variant(system: str) -> str:
-    logger.debug(f"{system=}")
-    variants = available_variants(system)
+    variants = default_available_variants(system)
     return variants[0]
 
 
 def config(system: str, variant: str) -> dict[str, str]:
-    logger.debug(f"{system=}, {variant=}")
-
-    config = dict()
-    if system == "default":
-        config["sys_prefix"] = "None"
-        config["MPICC"] = "mpicc"
-    else:
-        site_config = SourceFileLoader(
-            "local_site_config", environ["MPI4PY_LOCAL"]
-        ).load_module()
-        return site_config.config(variant)
-
-    return config
+    return default_config(CONFIG, system, variant)
 
 
 def init(system: str, variant: str) -> str:
     logger.debug(f"{system=}, {variant=}")
-
-    if system == "default":
-        return ""
-    else:
-        site_config = SourceFileLoader(
-            "local_site_config", environ["MPI4PY_LOCAL"]
-        ).load_module()
-        return site_config.init(variant)
+    config = default_config(CONFIG, system, variant)
+    return config["init"]
 
 
 def sanity(system: str, variant: str, config: dict[str, str]) -> bool:

@@ -1,6 +1,10 @@
 {
     "__environment": {
-        "host": "MPI4PY_HOST"
+        "host": "MPI4PY_HOST",
+        "blacklist": [
+            "MPI4PY_NOLOCAL",
+            "NERSC_HOST"
+        ]
     },
     "default": {
         "gcc": {
