@@ -8,7 +8,9 @@ def dict_hash(dictionary: dict[str, Any]) -> str:
     """
     dict_hash(dictionary: dict[str, Any]) -> str
 
-    MD5 hash of a dictionary.
+    MD5 hash of a dictionary. This is used to retrieve an existing class
+    instance from the singleton `_instances` store. The dictionary is
+    respresented by a json with sorted keys.
     """
     dhash = hashlib.md5()
     # We need to sort arguments so {'a': 1, 'b': 2} is

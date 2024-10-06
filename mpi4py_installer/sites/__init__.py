@@ -1,6 +1,6 @@
 import json
 
-from ..          import load_site, load_user_site, logger, Singleton
+from ..          import load_site, load_user_site, logger, Singleton, MPIConfig
 from os          import environ
 from pathlib     import Path
 from dataclasses import dataclass, field
@@ -109,10 +109,20 @@ def auto_site() -> tuple[str|None, bool]:
 CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
 
 @dataclass
+class ConfigEnv():
+    pass
+
+
+@dataclass
 class ConfigStore(metaclass=Singleton):
     file: str
     data: CONFIG_DICT|None = field(init=False)
+
     config_file: Path = field(init=False)
+    config_valid: bool = field(init=False)
+
+    config_env: dict[str, str|list[str]] = field(init=False)
+    config_sys: dict[str, dict[str,str]] = field(init=False)
 
 
     def __post_init__(self):
@@ -128,7 +138,7 @@ class ConfigStore(metaclass=Singleton):
 
         module_path = Path(self.file).resolve()
         config_file = module_path.parent / Path(module_path.stem + ".json")
-        self.data = load_config_file(config_file)
+        self.data = ConfigStore.load_config_file(config_file)
         self.config_file = config_file
 
 
@@ -166,34 +176,35 @@ class ConfigStore(metaclass=Singleton):
         return system_variants(self.data, system)
 
 
-def load_config_file(config_file_path: Path) -> CONFIG_DICT|None:
-    """
-    CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
-    load_config_file(config_file_path: Path) -> CONFIG_DICT|None
+    @staticmethod
+    def load_config_file(config_file_path: Path) -> CONFIG_DICT|None:
+        """
+        CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
+        load_config_file(config_file_path: Path) -> CONFIG_DICT|None
 
 
-    Load a json at the location of `config_file_path`. Does some basic
-    validation (file is a json file, file exists). The contents of the json
-    object are not validated.
+        Load a json at the location of `config_file_path`. Does some basic
+        validation (file is a json file, file exists). The contents of the json
+        object are not validated.
 
-    * If the config file does not exist, or if it's not a json file, then
-      return None
-    """
+        * If the config file does not exist, or if it's not a json file, then
+          return None
+        """
 
-    if not config_file_path.is_file():
-        logger.critical(f"File {config_file_path=} does not exist")
-        return None
+        if not config_file_path.is_file():
+            logger.critical(f"File {config_file_path=} does not exist")
+            return None
 
-    if config_file_path.suffix != ".json":
-        logger.critical(
-            f"Cannot load config file at {config_file_path=} -- not a json"
-        )
-        return None
+        if config_file_path.suffix != ".json":
+            logger.critical(
+                f"Cannot load config file at {config_file_path=} -- not a json"
+            )
+            return None
 
-    with open(config_file_path, "r") as f:
-        data = json.load(f)
+        with open(config_file_path, "r") as f:
+            data = json.load(f)
 
-    return data
+        return data
 
 
 def site_systems(site_config: CONFIG_DICT) -> list[str]:
@@ -289,4 +300,4 @@ def default_config(
         )
         raise RuntimeError(f"Could not find settings for variant '{variant}'")
 
-    return config.data[system][variant]
+    return MPIConfig(**config.data[system][variant])

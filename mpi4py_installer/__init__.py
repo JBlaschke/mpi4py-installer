@@ -1,5 +1,6 @@
-from .runners   import ShellRunner
-from .singleton import Singleton
+from .runners    import ShellRunner
+from .singleton  import Singleton
+from .mpi_config import MPIConfig
 
 import sys
 import logging
@@ -68,26 +69,22 @@ def pip_find_mpi4py():
     return False
 
 
-def is_system_prefix(config):
-    return sys.prefix.startswith(config["sys_prefix"]) # TODO: handle malformed config inputs
-
-
 def pip_cmd(config):
     logger.debug("Configuring pip command")
 
     pip_cmd = ""
 
-    if "MPICC" in config:
-        pip_cmd += f"MPICC=\"{config['MPICC']}\""
+    if config.MPICC:
+        pip_cmd += f"MPICC=\"{config.MPICC}\""
         pip_cmd += " "
-    if "CC" in config:
-        pip_cmd += f"CC=\"{config['CC']}\""
+    if config.CC:
+        pip_cmd += f"CC=\"{config.CC}\""
         pip_cmd += " "
-    if "CFLAGS" in config:
-        pip_cmd += f"CFLAGS=\"{config['CFLAGS']}\""
+    if config.CFLAGS:
+        pip_cmd += f"CFLAGS=\"{config.CFLAGS}\""
         pip_cmd += " "
-    if "LDFLAGS" in config:
-        pip_cmd += f"LDFLAGS=\"{config['LDFLAGS']}\""
+    if config.LDFLAGS:
+        pip_cmd += f"LDFLAGS=\"{config.LDFLAGS}\""
         pip_cmd += " "
 
     pip_cmd += f"{sys.executable} -m pip"

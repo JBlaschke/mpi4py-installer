@@ -1,5 +1,5 @@
 from . import logger, load_site, load_user_site, pip_find_mpi4py, pip_cmd, \
-    is_system_prefix, pip_uninstall_mpi4py, pip_install_mpi4py
+    pip_uninstall_mpi4py, pip_install_mpi4py
 
 from .sites import auto_site, Site
 
@@ -126,7 +126,7 @@ def run():
     has_mpi4py = pip_find_mpi4py()
     logger.info(f"{has_mpi4py=}")
 
-    if is_system_prefix(config):
+    if config.is_system_prefix:
         logger.warning(" ".join([
             "Your python version shares the system prefix.",
             "Did you forget to activate your python environment?"
