@@ -1,7 +1,8 @@
+from .validated_dataclasses import ValidatedDataClass
+
 import sys
 
 from dataclasses import dataclass
-from .validated_dataclasses import ValidatedDataClass
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,7 @@
-from .runners    import ShellRunner
-from .singleton  import Singleton
-from .mpi_config import MPIConfig
+from .runners               import ShellRunner
+from .singleton             import Singleton
+from .mpi_config            import MPIConfig
+from .validated_dataclasses import ValidatedDataClass
 
 import sys
 import logging

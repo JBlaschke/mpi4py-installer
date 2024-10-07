@@ -1,12 +1,13 @@
 import json
 
-from ..          import load_site, load_user_site, logger, Singleton, MPIConfig
+from ..          import load_site, load_user_site, logger,\
+    Singleton, MPIConfig, ValidatedDataClass
 from os          import environ
 from pathlib     import Path
 from dataclasses import dataclass, field
 
 
-@dataclass
+@dataclass(frozen=True)
 class Site(metaclass=Singleton):
     """
     class Site(metaclass=Singleton):
@@ -28,6 +29,7 @@ class Site(metaclass=Singleton):
     ).expanduser().resolve()
     sites: list[str] = field(init=False)
     user_sites: list[str] = field(init=False)
+
 
     def __post_init__(self):
         """
@@ -61,6 +63,9 @@ class Site(metaclass=Singleton):
                 append_site(self.user_sites, x)
 
         logger.debug(f"Found: {self.sites=}, {self.user_sites}")
+
+        # Validate data type annotations
+        ValidatedDataClass.post_init(self)
 
 
 def auto_site() -> tuple[str|None, bool]:
@@ -108,8 +113,14 @@ def auto_site() -> tuple[str|None, bool]:
 
 CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
 
-@dataclass
-class ConfigEnv():
+@dataclass(frozen=True)
+class ConfigEnv(metaclass=ValidatedDataClass):
+    _data : dict[str, str|list[str]]
+
+
+
+@dataclass(frozen=True)
+class ConfigSys(metaclass=ValidatedDataClass):
     pass
 
 
@@ -117,9 +128,9 @@ class ConfigEnv():
 class ConfigStore(metaclass=Singleton):
     file: str
     data: CONFIG_DICT|None = field(init=False)
+    _valid: bool = field(init=False)
 
     config_file: Path = field(init=False)
-    config_valid: bool = field(init=False)
 
     config_env: dict[str, str|list[str]] = field(init=False)
     config_sys: dict[str, dict[str,str]] = field(init=False)
@@ -141,6 +152,14 @@ class ConfigStore(metaclass=Singleton):
         self.data = ConfigStore.load_config_file(config_file)
         self.config_file = config_file
 
+        if self.data is not None:
+            self._valid = True
+        else:
+            self._valid = False
+
+        # Validate data type annotations
+        ValidatedDataClass.post_init(self)
+
 
     @property
     def valid(self) -> bool:
@@ -148,9 +167,10 @@ class ConfigStore(metaclass=Singleton):
         valid -> bool
 
 
-        Data set is valid for processing
+        Data contained within represents a loaded MPI configuration. If `False`
+        then this ConfigStore does not contain any loaded MPI configurations.
         """
-        return self.data is not None
+        return self._valid
 
 
     @property
