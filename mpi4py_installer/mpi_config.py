@@ -1,10 +1,11 @@
 import sys
 
 from dataclasses import dataclass
+from .validated_dataclasses import ValidatedDataClass
 
 
-@dataclass
-class MPIConfig:
+@dataclass(frozen=True)
+class MPIConfig(metaclass=ValidatedDataClass):
 
     MPICC:   str|None = None
     CC:      str|None = None
@@ -12,14 +13,6 @@ class MPIConfig:
     LDFLAGS: str|None = None
 
     sys_prefix: str|list[str]|None = None
-
-    def __post_init__(self):
-        for (name, field_type) in self.__annotations__.items():
-            if not isinstance(self.__dict__[name], field_type):
-                current_type = type(self.__dict__[name])
-                raise TypeError(
-                    f"{name} is not a {field_type} (instead of {current_type})"
-                )
 
 
     @staticmethod
