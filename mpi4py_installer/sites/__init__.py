@@ -1,10 +1,12 @@
 import json
 
-from ..          import load_site, load_user_site, logger,\
+from .. import load_site, load_user_site, logger,\
     Singleton, MPIConfig, ValidatedDataClass
-from os          import environ
-from pathlib     import Path
-from dataclasses import dataclass, field
+
+from os              import environ
+from pathlib         import Path
+from dataclasses     import dataclass, field
+from collections.abc import KeysView
 
 
 @dataclass(frozen=True)
@@ -115,8 +117,24 @@ CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
 
 @dataclass(frozen=True)
 class ConfigEnv(metaclass=ValidatedDataClass):
+    """
+    @dataclass(frozen=True)
+    class ConfigEnv(metaclass=ValidatedDataClass):
+        _data: dict[str, str|list[str]]
+
+
+    Storage class for environment configuration -- use `__getitem__` to access
+    `_data`; and `keys` to get a list of defined keys in `_data`.
+    """
     _data : dict[str, str|list[str]]
 
+
+    def __getitem__(self, key) -> str|list[str]:
+        return self._data[key]
+
+
+    def keys(self) -> KeysView:
+        return self._data.keys()
 
 
 @dataclass(frozen=True)

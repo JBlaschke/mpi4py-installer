@@ -166,6 +166,4 @@ class ValidatedDataClass(type):
         for (name, field_type) in self.__annotations__.items():
             if not check_type(self.__dict__[name], field_type):
                 current_type = type(self.__dict__[name])
-                raise TypeError(
-                    f"`{name}` is not a `{field_type}` [got: `{current_type}`]"
-                )
+                raise TypeError(f"`{name}` is not a `{field_type}`")
