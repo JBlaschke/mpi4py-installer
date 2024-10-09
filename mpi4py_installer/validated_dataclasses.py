@@ -17,9 +17,13 @@ def check_type(obj:object, typ:type) -> bool:
     """
 
     if type(typ) == UnionType:
+        # coerce type for mypy
+        assert isinstance(typ, UnionType)
         return check_union_type(obj, typ)
 
     if type(typ) == GenericAlias:
+        # coerce type for mypy
+        assert isinstance(typ, GenericAlias)
         return check_generic_alias_type(obj, typ)
     
     return isinstance(obj, typ)

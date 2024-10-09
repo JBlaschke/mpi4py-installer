@@ -113,45 +113,62 @@ def auto_site() -> tuple[str|None, bool]:
     return found, flag
 
 
-CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
+CONFIG_DICT = dict[str, dict[str, str | list[str] | dict[str, dict[str, str]]]]
 
 @dataclass(frozen=True)
 class ConfigEnv(metaclass=ValidatedDataClass):
     """
     @dataclass(frozen=True)
     class ConfigEnv(metaclass=ValidatedDataClass):
-        _data: dict[str, str|list[str]]
+        _env: dict[str, str|list[str]]
 
 
     Storage class for environment configuration -- use `__getitem__` to access
-    `_data`; and `keys` to get a list of defined keys in `_data`.
+    `_env`; and `keys` to get a list of defined keys in `_env`.
     """
-    _data : dict[str, str|list[str]]
+    _env: dict[str, str|list[str]]
 
 
     def __getitem__(self, key) -> str|list[str]:
-        return self._data[key]
+        return self._env[key]
 
 
     def keys(self) -> KeysView:
-        return self._data.keys()
+        return self._env.keys()
 
 
 @dataclass(frozen=True)
 class ConfigSys(metaclass=ValidatedDataClass):
-    pass
+    """
+    @dataclass(frozen=True)
+    class ConfigSys(metaclass=ValidatedDataClass):
+        _sys: dict[str, MPIConfig]
+
+
+    Storage class for system configuration -- use `__getitem__` to access
+    `_sys`; and `keys` to get a list of defined keys in `_sys`.
+    """
+    _sys: dict[str, MPIConfig]
+
+
+    def __getitem__(self, key) -> str|list[str]:
+        return self._sys[key]
+
+
+    def keys(self) -> KeysView:
+        return self._sys.keys()
 
 
 @dataclass
 class ConfigStore(metaclass=Singleton):
     file: str
-    data: CONFIG_DICT|None = field(init=False)
+    # data: CONFIG_DICT|None = field(init=False)
     _valid: bool = field(init=False)
 
     config_file: Path = field(init=False)
 
-    config_env: dict[str, str|list[str]] = field(init=False)
-    config_sys: dict[str, dict[str,str]] = field(init=False)
+    env:           ConfigEnv  = field(init=False)
+    sys: dict[str, ConfigSys] = field(init=False)
 
 
     def __post_init__(self):
@@ -167,13 +184,27 @@ class ConfigStore(metaclass=Singleton):
 
         module_path = Path(self.file).resolve()
         config_file = module_path.parent / Path(module_path.stem + ".json")
-        self.data = ConfigStore.load_config_file(config_file)
-        self.config_file = config_file
+        data = ConfigStore.load_config_file(config_file)
 
         if self.data is not None:
             self._valid = True
         else:
             self._valid = False
+
+        self.config_file = config_file
+
+        if self._valid:
+            env_config = data["environment"]
+            sys_config = data["systems"]
+
+            self.env = ConfigEnv(**envi_config)
+
+            for system in sys_config.keys():
+
+                sys[system] = ConfigSys(**{
+                    variant: MPIConfig(**var_config)
+                    for variant, var_config in sys_config[system].items()
+                })
 
         # Validate data type annotations
         ValidatedDataClass.post_init(self)
@@ -217,7 +248,6 @@ class ConfigStore(metaclass=Singleton):
     @staticmethod
     def load_config_file(config_file_path: Path) -> CONFIG_DICT|None:
         """
-        CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
         load_config_file(config_file_path: Path) -> CONFIG_DICT|None
 
 
@@ -245,30 +275,30 @@ class ConfigStore(metaclass=Singleton):
         return data
 
 
-def site_systems(site_config: CONFIG_DICT) -> list[str]:
-    """
-    CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
-    site_systems(site_config: CONFIG_DICT) -> list[str]
-
-
-    Return a list of available sites descirbed in the config dictionary
-    """
-
-    return [k for k in site_config.keys() if not k.startswith("__")]
-
-
-def system_variants(site_config: CONFIG_DICT, system: str) -> list[str]:
-    """
-    CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
-    system_variants(site_config: CONFIG_DICT, system: str) -> list[str]
-
-
-    Return a list of valiable variants descirbed in the config dictionary for
-    the specified system
-    """
-    system_config = site_config[system]
-    assert isinstance(system_config, dict)
-    return [k for k in system_config.keys()]
+# def site_systems(site_config: CONFIG_DICT) -> list[str]:
+#     """
+#     CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
+#     site_systems(site_config: CONFIG_DICT) -> list[str]
+# 
+# 
+#     Return a list of available sites descirbed in the config dictionary
+#     """
+# 
+#     return [k for k in site_config.keys() if not k.startswith("__")]
+# 
+# 
+# def system_variants(site_config: CONFIG_DICT, system: str) -> list[str]:
+#     """
+#     CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
+#     system_variants(site_config: CONFIG_DICT, system: str) -> list[str]
+# 
+# 
+#     Return a list of valiable variants descirbed in the config dictionary for
+#     the specified system
+#     """
+#     system_config = site_config[system]
+#     assert isinstance(system_config, dict)
+#     return [k for k in system_config.keys()]
 
 
 def default_check_site(config: ConfigStore) -> str:
