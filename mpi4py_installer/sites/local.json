@@ -10,11 +10,13 @@
         "default": {
             "gcc": {
                 "sys_prefix": ["/opt/"],
+                "init": [],
                 "MPICC": "mpicc",
                 "CC": "gcc"
             },
             "clang": {
                 "sys_prefix": ["/opt/"],
+                "init": [],
                 "MPICC": "mpicc",
                 "CC": "clang"
             }

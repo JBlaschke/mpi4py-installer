@@ -1,3 +1,4 @@
+from .abc                   import makecls
 from .runners               import ShellRunner
 from .singleton             import Singleton
 from .mpi_config            import MPIConfig

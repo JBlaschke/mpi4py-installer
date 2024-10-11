@@ -14,6 +14,17 @@ class MPIConfig(metaclass=ValidatedDataClass):
     LDFLAGS: str|None = None
 
     sys_prefix: str|list[str]|None = None
+    init:       str|list[str]|None = None
+
+
+    def __post_init__(self):
+        if isinstance(self.sys_prefix, list):
+            if not self.sys_prefix: # empty list
+                object.__setattr__(self, "sys_prefix", None)
+
+        if isinstance(self.init, list):
+            if not self.init: # empty list
+                object.__setattr__(self, "init", None)
 
 
     @staticmethod

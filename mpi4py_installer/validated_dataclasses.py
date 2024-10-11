@@ -17,12 +17,12 @@ def check_type(obj:object, typ:type) -> bool:
     """
 
     if type(typ) == UnionType:
-        # coerce type for mypy
+        # narrow type for mypy
         assert isinstance(typ, UnionType)
         return check_union_type(obj, typ)
 
     if type(typ) == GenericAlias:
-        # coerce type for mypy
+        # narrow type for mypy
         assert isinstance(typ, GenericAlias)
         return check_generic_alias_type(obj, typ)
     
@@ -56,6 +56,8 @@ def check_generic_alias_type(obj:object, gtyp:GenericAlias) -> bool:
     # necessary. Default to checking outer type only
 
     if outer == dict:
+        # narrow mypy data type
+        assert isinstance(obj, dict)
         # Dicts can have no type args => we're done
         if len(inner) == 0:
             return True
@@ -75,6 +77,8 @@ def check_generic_alias_type(obj:object, gtyp:GenericAlias) -> bool:
         return True
 
     if outer == list:
+        # narrow mypy data type
+        assert isinstance(obj, list)
         # Lists can have no type args => we're done
         if len(inner) == 0:
             return True
@@ -89,6 +93,8 @@ def check_generic_alias_type(obj:object, gtyp:GenericAlias) -> bool:
         return True
 
     if outer == tuple:
+        # narrow mypy data type
+        assert isinstance(obj, tuple)
         # Lists can have no type args => we're done
         if len(inner) == 0:
             return True
@@ -145,7 +151,7 @@ class ValidatedDataClass(type):
     Recommended use is:
 
     @dataclass(frozen=True)
-    class MyData:
+    class MyData(metaclass=ValidatedDataClass):
         ...
 
     as this will ensure that `MyData's` attributes will have the correct types,
@@ -153,7 +159,10 @@ class ValidatedDataClass(type):
     """
 
     def __new__(cls, name, bases, namespace):
-        namespace['__post_init__'] = ValidatedDataClass.post_init
+        if "__post_init__" in namespace:
+            namespace["__pre_validate__"] = namespace["__post_init__"]
+
+        namespace["__post_init__"] = ValidatedDataClass.post_init
         return type.__new__(cls, name, bases, namespace)
 
     
@@ -167,7 +176,15 @@ class ValidatedDataClass(type):
         Raises TypeError if any of the fields in the the dataclass have a type
         different from their annotation
         """
+        # hook to run user-defined (pre-validation) post-init code
+        if hasattr(self, "__pre_validate__"):
+            self.__pre_validate__()
+
         for (name, field_type) in self.__annotations__.items():
             if not check_type(self.__dict__[name], field_type):
                 current_type = type(self.__dict__[name])
                 raise TypeError(f"`{name}` is not a `{field_type}`")
+
+        # hook to run post-validation code
+        if hasattr(self, "__post_validate__"):
+            self.__post_validate__()

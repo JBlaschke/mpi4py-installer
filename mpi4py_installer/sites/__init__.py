@@ -1,6 +1,6 @@
 import json
 
-from .. import load_site, load_user_site, logger,\
+from .. import load_site, load_user_site, logger, makecls,\
     Singleton, MPIConfig, ValidatedDataClass
 
 from os              import environ
@@ -10,7 +10,7 @@ from collections.abc import KeysView
 
 
 @dataclass(frozen=True)
-class Site(metaclass=Singleton):
+class Site(metaclass=makecls(Singleton, ValidatedDataClass)): # type: ignore
     """
     class Site(metaclass=Singleton):
         path
@@ -51,8 +51,8 @@ class Site(metaclass=Singleton):
                 return
             site_list.append(site.stem)
 
-        self.sites: list[str] = list()
-        self.user_sites: list[str] = list()
+        object.__setattr__(self, "sites", list())
+        object.__setattr__(self, "user_sites", list())
 
         logger.debug(f"Searching {self.path=}")
         for x in self.path.glob("*.py"):
@@ -65,9 +65,6 @@ class Site(metaclass=Singleton):
                 append_site(self.user_sites, x)
 
         logger.debug(f"Found: {self.sites=}, {self.user_sites}")
-
-        # Validate data type annotations
-        ValidatedDataClass.post_init(self)
 
 
 def auto_site() -> tuple[str|None, bool]:
@@ -113,8 +110,6 @@ def auto_site() -> tuple[str|None, bool]:
     return found, flag
 
 
-CONFIG_DICT = dict[str, dict[str, str | list[str] | dict[str, dict[str, str]]]]
-
 @dataclass(frozen=True)
 class ConfigEnv(metaclass=ValidatedDataClass):
     """
@@ -129,12 +124,24 @@ class ConfigEnv(metaclass=ValidatedDataClass):
     _env: dict[str, str|list[str]]
 
 
+    def __post_validate__(self):
+        assert "host" in self._env.keys()
+        assert "blacklist" in self._env.keys()
+
+
     def __getitem__(self, key) -> str|list[str]:
         return self._env[key]
 
 
     def keys(self) -> KeysView:
         return self._env.keys()
+
+
+    @property
+    def host(self) -> str:
+        # type narrowing for mypy
+        assert isinstance(self["host"], str)
+        return self["host"]
 
 
 @dataclass(frozen=True)
@@ -146,12 +153,13 @@ class ConfigSys(metaclass=ValidatedDataClass):
 
 
     Storage class for system configuration -- use `__getitem__` to access
-    `_sys`; and `keys` to get a list of defined keys in `_sys`.
+    `_sys`; and `keys` to get a list of defined keys in `_sys`. Each key is a
+    build vaiant on the system.
     """
     _sys: dict[str, MPIConfig]
 
 
-    def __getitem__(self, key) -> str|list[str]:
+    def __getitem__(self, key) -> MPIConfig:
         return self._sys[key]
 
 
@@ -159,10 +167,10 @@ class ConfigSys(metaclass=ValidatedDataClass):
         return self._sys.keys()
 
 
-@dataclass
-class ConfigStore(metaclass=Singleton):
+@dataclass(frozen=True)
+class ConfigStore(metaclass=makecls(Singleton, ValidatedDataClass)): # type: ignore
     file: str
-    # data: CONFIG_DICT|None = field(init=False)
+
     _valid: bool = field(init=False)
 
     config_file: Path = field(init=False)
@@ -184,30 +192,27 @@ class ConfigStore(metaclass=Singleton):
 
         module_path = Path(self.file).resolve()
         config_file = module_path.parent / Path(module_path.stem + ".json")
-        data = ConfigStore.load_config_file(config_file)
+        env_config, sys_config = ConfigStore.load_config_file(config_file)
 
-        if self.data is not None:
-            self._valid = True
-        else:
-            self._valid = False
-
-        self.config_file = config_file
+        object.__setattr__(
+            self, "_valid",
+            (env_config is not None) and (sys_config is not None)
+        )
+        object.__setattr__(self, "config_file", config_file)
 
         if self._valid:
-            env_config = data["environment"]
-            sys_config = data["systems"]
+            # narrow mypy data type
+            assert env_config is not None
+            assert sys_config is not None
 
-            self.env = ConfigEnv(**envi_config)
+            object.__setattr__(self, "env", ConfigEnv(_env = env_config))
+            object.__setattr__(self, "sys", dict())
 
             for system in sys_config.keys():
-
-                sys[system] = ConfigSys(**{
-                    variant: MPIConfig(**var_config)
+                self.sys[system] = ConfigSys(_sys = {
+                    variant: MPIConfig(**var_config) # type: ignore
                     for variant, var_config in sys_config[system].items()
                 })
-
-        # Validate data type annotations
-        ValidatedDataClass.post_init(self)
 
 
     @property
@@ -223,15 +228,14 @@ class ConfigStore(metaclass=Singleton):
 
 
     @property
-    def systems(self) -> list[str]|None:
+    def systems(self) -> list[str]:
         """
-        systems -> list[str]|None
+        systems -> list[str]
 
 
         List of all systems contained in this config
         """
-        assert self.data is not None
-        return site_systems(self.data)
+        return [system for system in self.sys.keys()]
 
 
     def variants(self, system: str) -> list[str]:
@@ -241,15 +245,19 @@ class ConfigStore(metaclass=Singleton):
 
         List of all variants on this site for a given system
         """
-        assert self.data is not None
-        return system_variants(self.data, system)
+        return [variant for variant in self.sys[system].keys()]
 
 
     @staticmethod
-    def load_config_file(config_file_path: Path) -> CONFIG_DICT|None:
+    def load_config_file(config_file_path: Path) -> tuple[
+                dict[str, str | list[str]] | None,
+                dict[str, dict[str, dict[str, str | list[str] | None ]]] | None
+            ]:
         """
-        load_config_file(config_file_path: Path) -> CONFIG_DICT|None
-
+        load_config_file(config_file_path: Path) -> tuple[
+                dict[str, str | list[str]] | None,
+                dict[str, dict[str, dict[str, str | list[str] | None ]]] | None
+            ]
 
         Load a json at the location of `config_file_path`. Does some basic
         validation (file is a json file, file exists). The contents of the json
@@ -261,52 +269,38 @@ class ConfigStore(metaclass=Singleton):
 
         if not config_file_path.is_file():
             logger.critical(f"File {config_file_path=} does not exist")
-            return None
+            return None, None
 
         if config_file_path.suffix != ".json":
             logger.critical(
                 f"Cannot load config file at {config_file_path=} -- not a json"
             )
-            return None
+            return None, None
 
         with open(config_file_path, "r") as f:
             data = json.load(f)
 
-        return data
+        if "environment" not in data.keys():
+            logger.critical(
+                f"'environment' is not a root key of {config_file_path}"
+            )
+            return None, None
 
 
-# def site_systems(site_config: CONFIG_DICT) -> list[str]:
-#     """
-#     CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
-#     site_systems(site_config: CONFIG_DICT) -> list[str]
-# 
-# 
-#     Return a list of available sites descirbed in the config dictionary
-#     """
-# 
-#     return [k for k in site_config.keys() if not k.startswith("__")]
-# 
-# 
-# def system_variants(site_config: CONFIG_DICT, system: str) -> list[str]:
-#     """
-#     CONFIG_DICT = dict[str, str|list[str]|dict[str, str]]
-#     system_variants(site_config: CONFIG_DICT, system: str) -> list[str]
-# 
-# 
-#     Return a list of valiable variants descirbed in the config dictionary for
-#     the specified system
-#     """
-#     system_config = site_config[system]
-#     assert isinstance(system_config, dict)
-#     return [k for k in system_config.keys()]
+        if "systems" not in data.keys():
+            logger.critical(
+                f"'systems' is not a root key of {config_file_path}"
+            )
+            return None, None
+
+        return data["environment"], data["systems"]
 
 
-def default_check_site(config: ConfigStore) -> str:
+def default_check_site(config: ConfigStore) -> bool:
     logger.debug("Using default check_site")
 
-    env_descriptor = config.data["__environment"]
-    host_varname   = env_descriptor["host"]
-    blacklist_vars = env_descriptor["blacklist"]
+    host_varname   = config.env["host"]
+    blacklist_vars = config.env["blacklist"]
 
     logger.debug(f"{host_varname=}, {blacklist_vars=}")
 
@@ -322,8 +316,7 @@ def default_check_site(config: ConfigStore) -> str:
 def default_determine_system(config: ConfigStore) -> str:
     logger.debug("Using default determine_system")
 
-    env_descriptor = config.data["__environment"]
-    host_varname   = env_descriptor["host"]
+    host_varname = config.env.host
 
     logger.debug(f"{host_varname=}, {config.systems=}")
 
@@ -353,7 +346,7 @@ def default_available_variants(config: ConfigStore, system: str) -> list[str]:
 
 def default_config(
             config: ConfigStore, system: str, variant: str
-        ) -> dict[str, str]:
+        ) -> MPIConfig:
     logger.debug(f"Using default config for {system=}, {variant=}")
 
     if system not in config.systems:
@@ -364,8 +357,8 @@ def default_config(
 
     if variant not in config.variants(system):
         logger.critical(
-            f"No section for '{variants}' for system '{system}'"
+            f"No section for '{variant}' for system '{system}'"
         )
         raise RuntimeError(f"Could not find settings for variant '{variant}'")
 
-    return MPIConfig(**config.data[system][variant])
+    return config.sys[system][variant]
