@@ -14,7 +14,7 @@ def check_site() -> bool:
     return default_check_site(CONFIG)
 
 
-def available_systems() -> str:
+def available_systems() -> list[str]:
     return default_available_systems(CONFIG)
 
 
