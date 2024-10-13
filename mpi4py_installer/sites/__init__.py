@@ -313,6 +313,11 @@ def default_check_site(config: ConfigStore) -> bool:
     return is_site
 
 
+def default_available_systems(config: ConfigStore) -> list[str]:
+    logger.debug("Using default available_systems")
+    return config.systems
+
+
 def default_determine_system(config: ConfigStore) -> str:
     logger.debug("Using default determine_system")
 
@@ -320,7 +325,14 @@ def default_determine_system(config: ConfigStore) -> str:
 
     logger.debug(f"{host_varname=}, {config.systems=}")
 
-    host_name = environ[host_varname]
+    if host_varname not in environ:
+        logger.warning(
+            f"{host_varname=} is not in environment. Defaulting to 'default'"
+        )
+        host_name = "default"
+    else:
+        host_name = environ[host_varname]
+
     if host_name not in config.systems:
         logger.critical(
             f"No section for '{host_name}' exists in: {config.config_file}"

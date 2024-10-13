@@ -36,6 +36,10 @@ def run():
         help="Display variants for this site and system"
     )
     parser.add_argument(
+        "--show-systems", action="store_true",
+        help="Display configured systems for this site"
+    )
+    parser.add_argument(
         "--user", action="store_true",
         help="Install to USER_BASE instead"
     )
@@ -78,7 +82,7 @@ def run():
     else:
         if args.site in site_info.sites:
             site = load_site(args.site)
-        elif args.site in site_info.user_sites:
+        elif args.sfite in site_info.user_sites:
             site = load_user_site(args.site, site_info.user_path)
         else:
             mod_sites = site_info.sites
@@ -87,6 +91,22 @@ def run():
                 f"Site {args.site} not in {mod_sites=} nor {usr_sites=}"
             )
             raise RuntimeError(f"{args.site} could not be found")
+
+    # If the CLI specifies `show_systems`, then print all avaialble systems,
+    # and exist (do not install anything). The result returned by `determine
+    # system` is highlighted using `*`
+    if args.show_systems:
+        print(f"Available systems for {site=}")
+        system = site.determine_system()
+
+        for s in site.available_systems():
+            if s == system:
+                print(f"  * {s}")
+            else:
+                print(f"    {s}")
+
+        exit(0)
+
 
     # Set the system using `determine_system` -- the CLI flag can be used to
     # overwrite the output from `determine_system`.
@@ -97,9 +117,9 @@ def run():
         system = args.system
         logger.info(f"Using: {system=}")
 
-    # If the CLI specifies `show_variants`, then print all avalailable variants,
-    # and exit (do not install anything). The result returned by `auto_variant`
-    # is highlighted using `*`
+    # If the CLI specifies `show_variants`, then print all avalailable
+    # variants, and exit (do not install anything). The result returned by
+    # `auto_variant` is highlighted using `*`
     if args.show_variants:
         print(f"Available variants for {system=}")
         auto_variant = site.auto_variant(system)

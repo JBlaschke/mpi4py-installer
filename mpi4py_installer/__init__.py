@@ -34,7 +34,7 @@ def load_site(site: str) -> ModuleType:
     return site_module
 
 
-def load_user_site(user_site:str , user_site_root: Path) -> ModuleType:
+def load_user_site(user_site: str , user_site_root: Path) -> ModuleType:
     """
     load_user_site(user_site:str , user_site_root: Path) -> ModuleType
 

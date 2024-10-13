@@ -1,7 +1,8 @@
 from .  import ConfigStore, MPIConfig, \
-    default_check_site, default_determine_system, default_available_variants, \
-    default_config
+    default_check_site, default_available_systems, default_determine_system, \
+    default_available_variants, default_config
 from .. import logger
+
 from os import environ
 
 
@@ -11,6 +12,10 @@ CONFIG = ConfigStore(__file__)
 
 def check_site() -> bool:
     return default_check_site(CONFIG)
+
+
+def available_systems() -> str:
+    return default_available_systems(CONFIG)
 
 
 def determine_system() -> str:
