@@ -59,7 +59,7 @@ def pip_find_mpi4py():
 
         logger.debug(f"stderr={out.stderr.decode()}")
         out.check_returncode()
-        logger.debug(f"stderr={out.stdout.decode()}")
+        logger.debug(f"stdout={out.stdout.decode()}")
 
         for p in out.stdout.decode().split("\n"):
             package = p.split("==")
@@ -121,12 +121,15 @@ def pip_install_mpi4py(pip_cmd, use_user, init):
         cmd += " --user"
 
     with ShellRunner() as bash_runner:
-        logger.info(f"Running init command: {init}")  # TODO: skip if None
-        out = bash_runner.run(init, capture_output=True)
+        if (init is None) or (init == ""):
+            logger.info(f"Skipping {init=} command (None or empty)")
+        else:
+            logger.info(f"Running init command: {init}")
+            out = bash_runner.run(init, capture_output=True)
 
-        logger.debug(f"stderr={out.stderr.decode()}")
-        out.check_returncode()
-        logger.debug(f"stdout={out.stdout.decode()}")
+            logger.debug(f"stderr={out.stderr.decode()}")
+            out.check_returncode()
+            logger.debug(f"stdout={out.stdout.decode()}")
 
         logger.info(f"Running install command: {cmd}")
         out = bash_runner.run(cmd, capture_output=True)
