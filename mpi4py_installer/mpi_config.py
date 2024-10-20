@@ -15,6 +15,7 @@ class MPIConfig(metaclass=ValidatedDataClass):
 
     sys_prefix: str|list[str]|None = None
     init:       str|list[str]|None = None
+    mpicc_show: str|None           = None
 
 
     def __post_init__(self):

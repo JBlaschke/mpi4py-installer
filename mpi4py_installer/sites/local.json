@@ -10,13 +10,15 @@
         "default": {
             "gcc": {
                 "sys_prefix": ["/opt/"],
-                "init": [],
+                "mpicc_show": "-show",
+                "init": ["export MPI4PY_BUILD_CONFIGURE=ON"],
                 "MPICC": "mpicc",
                 "CC": "gcc"
             },
             "clang": {
                 "sys_prefix": ["/opt/"],
-                "init": [],
+                "mpicc_show": "-show",
+                "init": ["export MPI4PY_BUILD_CONFIGURE=ON"],
                 "MPICC": "mpicc",
                 "CC": "clang"
             }

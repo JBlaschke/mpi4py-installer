@@ -172,6 +172,11 @@ def run():
     logger.info("Checking mpi4py install config")
     sanity = site.sanity(system, variant, config)
     logger.info(f"{sanity=}")
-    if not sanity:
-        logger.critical("Sanity check FAILED")
+    if sanity:
+        logger.info("Sanity check passed, install successful!")
+        retcode = 0
+    else:
+        logger.critical("Sanity check FAILED, install unsuccessful!")
+        retcode = 1
 
+    exit(retcode)

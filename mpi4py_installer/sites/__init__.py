@@ -1,9 +1,14 @@
+import subprocess
+import ctypes
 import json
+import re
 
 from .. import load_site, load_user_site, logger, makecls,\
     Singleton, MPIConfig, ValidatedDataClass
 
-from os              import environ
+from os              import environ, fsdecode
+from sys             import platform
+from types           import ModuleType
 from pathlib         import Path
 from dataclasses     import dataclass, field
 from collections.abc import KeysView
@@ -374,3 +379,91 @@ def default_config(
         raise RuntimeError(f"Could not find settings for variant '{variant}'")
 
     return config.sys[system][variant]
+
+
+def get_mpicc_link_data(config: MPIConfig) -> tuple[list[str], list[str]]|None:
+    try:
+        # Run the mpicc command to show the underlying compiler command
+        output = subprocess.run(
+            [config.MPICC, config.mpicc_show],
+            capture_output=True, text=True, check=True
+        ).stdout
+
+        # Print the output for debugging purposes
+        logger.debug(f"{config.MPICC} {config.mpicc_show} output: {output}")
+
+        # Regular expression to match library paths (e.g., -L/path/to/lib and -lmpi)
+        lib_path_pattern = re.compile(r'-L(\S+)')
+        lib_name_pattern = re.compile(r'-l(\S+)')
+
+        # Find all library paths and names
+        lib_paths = lib_path_pattern.findall(output)
+        lib_names = lib_name_pattern.findall(output)
+
+        # Print the found paths and names
+        logger.debug(f"{config.MPICC} library paths: {lib_paths}")
+        logger.debug(f"{config.MPICC} linked libraries: {lib_names}")
+
+        return lib_paths, lib_names
+
+    except subprocess.CalledProcessError as e:
+        logger.critical("Failed to run mpicc command")
+        return None
+
+
+def get_mpi_library_path(MPI_module: ModuleType) -> str | None:
+    if platform.startswith("linux") or platform == "darwin":
+        # Linux and macOS
+        class DL_Info(ctypes.Structure):
+            _fields_ = [
+                ("dli_fname", ctypes.c_char_p),
+                ("dli_fbase", ctypes.c_void_p),
+                ("dli_sname", ctypes.c_char_p),
+                ("dli_saddr", ctypes.c_void_p),
+            ]
+
+        libc = ctypes.CDLL(None)
+        dladdr = libc.dladdr
+        dladdr.restype = ctypes.c_int
+        dladdr.argtypes = [ctypes.c_void_p, ctypes.POINTER(DL_Info)]
+
+        module = ctypes.CDLL(MPI_module.__file__)
+        symbol = module.MPI_Init
+        dl_info = DL_Info()
+        result = dladdr(
+            ctypes.cast(symbol, ctypes.c_void_p), ctypes.byref(dl_info)
+        )
+
+        if result == 0:
+            logger.critical("dladdr call failed")
+            return None
+
+        libmpi = fsdecode(dl_info.dli_fname)
+        return libmpi
+
+    elif platform == "win32":
+        # Windows
+        module = ctypes.windll.LoadLibrary(MPI_module.__file__)
+        buffer = ctypes.create_unicode_buffer(260)
+        GetModuleFileName = ctypes.windll.kernel32.GetModuleFileNameW
+        GetModuleFileName.argtypes = [
+            ctypes.wintypes.HMODULE,
+            ctypes.wintypes.LPWSTR,
+            ctypes.wintypes.DWORD
+        ]
+        GetModuleFileName.restype = ctypes.wintypes.DWORD
+
+        result = GetModuleFileName(
+            module._handle, buffer, ctypes.sizeof(buffer)
+        )
+
+        if result == 0:
+            logger.critical("GetModuleFileName call failed")
+            return None
+
+        libmpi = buffer.value
+        return libmpi
+
+    else:
+        logger.critical(f"Unsupported platform: {platform}")
+        return None
